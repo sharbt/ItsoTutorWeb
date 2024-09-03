@@ -5,74 +5,149 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ItsoTutor Web App</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
-        #chatbox { max-width: 500px; margin: 0 auto; padding: 10px; background: white; border: 1px solid #ccc; border-radius: 5px; }
-        #messages { height: 300px; overflow-y: auto; border-bottom: 1px solid #ccc; margin-bottom: 10px; }
-        .message { padding: 5px; margin: 5px 0; }
-        .user { text-align: right; }
-        .bot { text-align: left; color: blue; }
-        #input-box { display: flex; }
-        #input { flex: 1; padding: 10px; }
-        #send-button { padding: 10px; background: blue; color: white; border: none; cursor: pointer; }
-        #send-button:hover { background: darkblue; }
+        body  { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f4f4f4; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh;
+        }
+        
+        /* Chat container */
+        #chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 80vh;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* Messages area */
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        /* Individual messages */
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .user { 
+            align-self: flex-end; 
+            background-color: #007bff; 
+            color: white; 
+            text-align: right;
+        }
+        .bot { 
+            align-self: flex-start; 
+            background-color: #f1f1f1; 
+            color: black; 
+            text-align: left; 
+        }
+        
+        /* Input area */
+        #input-box {
+            display: flex;
+            padding: 20px;
+            border-top: 1px solid #ccc;
+            background-color: #f4f4f4;
+        }
+        #input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #send-button {
+            padding: 10px 20px;
+            margin-left: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #send-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Scrollbar styling */
+        #messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        #messages::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
-    <div id="chatbox">
+    
+    <div id="chat-container">
         <div id="messages"></div>
         <div id="input-box">
-            <input type="text" id="input" placeholder="Type a message..." />
-            <button id="send-button">Send</button>
+            <input type="text" id="input" placeholder="Type your message here">
+            <button id="send-button" onclick="sendMessage()">Send</button>
         </div>
     </div>
 
     <script>
-        const messagesDiv = document.getElementById('messages');
-        const inputBox = document.getElementById('input');
-        const sendButton = document.getElementById('send-button');
-
         async function sendMessage() {
-            const userMessage = inputBox.value.trim();
-            if (!userMessage) return;
+            const inputElement = document.getElementById('input');
+            const message = inputElement.value.trim();
+            
+            if (!message) return;
 
-            // Display user's message
-            appendMessage(userMessage, 'user');
+            // Display the user's message in the chatbox
+            appendMessage(message, 'user');
 
-            // Clear input
-            inputBox.value = '';
+            // Clear the input field
+            inputElement.value = '';
 
-            // Send message to Azure Function
-            const response = await fetch('https://itsotutor.azurewebsites.net/api/ITSOTutorMain', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message: userMessage }),
-            });
+            // Send the message to your backend (Azure Function or other API)
+            try {
+                const response = await fetch('https://itsotutor.azurewebsites.net/api/ITSOTutorMain', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                });
 
-            const responseData = await response.json();
-            const botMessage = responseData.text;
-
-            // Display bot's response
-            appendMessage(botMessage, 'bot');
+                const responseData = await response.json();
+                appendMessage(responseData.text, 'bot');
+            } catch (error) {
+                appendMessage("Sorry, something went wrong.", 'bot');
+            }
         }
 
-        function appendMessage(message, sender) {
+        function appendMessage(text, sender) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', sender);
-            messageElement.textContent = message;
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to the latest message
+            messageElement.textContent = text;
+
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.appendChild(messageElement);
+
+            // Scroll to the bottom of the messages container
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
-
-        sendButton.addEventListener('click', sendMessage);
-
-        // Allow pressing 'Enter' to send the message
-        inputBox.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
     </script>
+    
 </body>
 </html>
